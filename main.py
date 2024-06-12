@@ -201,6 +201,8 @@ def create_dieta(dieta: DietaCreate, db: Session = Depends(get_db), state = Depe
 
 @app.post("/create-rutina")
 def create_rutina(rutina: RutinaCreate, db: Session = Depends(get_db), state = Depends(getUserID)):
+    print(rutina.dias_semana.name)
+    print(rutina.dias_semana.value)
     db_rutina = Rutina(
         id_usuario=state.userID,
         nombre_rutina=rutina.nombre_rutina,
