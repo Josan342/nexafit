@@ -26,6 +26,7 @@ class Dieta(Base):
     nombre_dieta = Column(String(255), nullable=False)
     descripcion = Column(Text, nullable=True)
     calorias_objetivo = Column(DECIMAL(6,2), default=0)
+    calorias_totales = Column(DECIMAL(6,2), default=0)
     proteinas_gramos = Column(DECIMAL(6, 2), default=0)
     carbohidratos_gramos = Column(DECIMAL(6, 2), default=0)
     grasas_gramos = Column(DECIMAL(6, 2), default=0)
