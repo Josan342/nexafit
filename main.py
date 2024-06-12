@@ -378,7 +378,7 @@ def get_progreso_ejercicio(ejercicio_id_request: EjercicioIdRequest, db: Session
 @app.get("/progresos", response_model=List[ProgresoRead])
 def get_progresos(db: Session = Depends(get_db),state = Depends(getUserID)):
     progresos = db.query(Progreso).filter(Progreso.id_usuario == state.userID).all()
-    print(progresos)
+    print(progresos[0])
     return progresos
 
 @app.post("/progresos", response_model=ProgresoRead)

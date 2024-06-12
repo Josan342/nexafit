@@ -67,3 +67,6 @@ class ProgresoRead(BaseModel):
     peso: Optional[float]
     porcentaje_grasa: Optional[float]
     observaciones: Optional[str]
+    
+    class Config:
+        from_attributes = True
