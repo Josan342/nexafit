@@ -134,7 +134,7 @@ async def login_for_access_token(login:baseModels.Login, db: Session = Depends(g
 @app.middleware("http")
 async def verify_jwt(request: Request, call_next):
 
-    bypass_routes = ["/docs", "/openapi.json", "/redoc","/login","/register"]
+    bypass_routes = ["/docs", "/openapi.json", "/redoc","/login","/register","/"]
 
     if request.url.path not in bypass_routes:
         token = request.headers.get("Authorization", "").split(" ")[-1]
@@ -227,6 +227,15 @@ def add_alimento_dieta(dieta_alimento: DietaAlimentoCreate, db: Session = Depend
     db_alimento = db.query(Alimento).filter(Alimento.id_alimento == dieta_alimento.id_alimento).first()
     if not db_alimento:
         raise HTTPException(status_code=404, detail="Alimento no encontrado")
+
+    # Verificar si el alimento ya está en la dieta
+    existe_dieta_alimento = db.query(DietaAlimento).filter(
+        DietaAlimento.id_dieta == dieta_alimento.id_dieta,
+        DietaAlimento.id_alimento == dieta_alimento.id_alimento
+    ).first()
+
+    if existe_dieta_alimento:
+        raise HTTPException(status_code=400, detail="El alimento ya está añadido a la dieta")
 
     nuevo_dieta_alimento = DietaAlimento(
         id_dieta=dieta_alimento.id_dieta,
