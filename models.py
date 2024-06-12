@@ -25,11 +25,12 @@ class Dieta(Base):
     id_usuario = Column(Integer, ForeignKey('usuario.id_usuario'), nullable=False)
     nombre_dieta = Column(String(255), nullable=False)
     descripcion = Column(Text, nullable=True)
-    calorias_objetivo = Column(DECIMAL(6,2), default=0)
-    calorias_totales = Column(DECIMAL(6,2), default=0)
-    proteinas_gramos = Column(DECIMAL(6, 2), default=0)
-    carbohidratos_gramos = Column(DECIMAL(6, 2), default=0)
-    grasas_gramos = Column(DECIMAL(6, 2), default=0)
+    calorias_objetivo = Column(DECIMAL(8,2), default=0)
+    calorias_totales = Column(DECIMAL(8,2), default=0)
+    proteinas_gramos = Column(DECIMAL(8,2), default=0)
+    carbohidratos_gramos = Column(DECIMAL(8,2), default=0)
+    grasas_gramos = Column(DECIMAL(8,2), default=0)
+
 
 
 class DietaAlimento(Base):
