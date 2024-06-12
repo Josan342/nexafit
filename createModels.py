@@ -16,10 +16,10 @@ class UsuarioCreate(BaseModel):
 class DiasSemanaEnum(str, Enum):
     lunes = "lunes"
     martes = "martes"
-    miercoles = "miércoles"
+    mircoles = "mircoles"
     jueves = "jueves"
     viernes = "viernes"
-    sábado = "sábado"
+    sbado = "sbado"
     domingo = "domingo"
 
 class RutinaCreate(BaseModel):
