@@ -75,7 +75,7 @@ class Rutina(Base):
     id_usuario = Column(Integer, ForeignKey('usuario.id_usuario'), nullable=False)
     nombre_rutina = Column(String(255), nullable=False)
     descripcion = Column(Text)
-    dias_semana = Column(Enum('lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'))
+    dias_semana = Column(Enum('lunes', 'martes', 'mircoles', 'jueves', 'viernes', 'sbado', 'domingo'))
     fecha_creacion = Column(DateTime, server_default=func.current_timestamp())
 class RutinaEjercicio(Base):
     __tablename__ = 'rutina_ejercicio'
