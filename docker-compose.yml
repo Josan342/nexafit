@@ -15,7 +15,6 @@ services:
       - db
     command: gunicorn -w 9 -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:80 --timeout 1200 
 
-
   nginx:
     image: nginx:latest
     ports:
@@ -25,7 +24,6 @@ services:
       - ./nginx:/etc/nginx/conf.d
     depends_on:
       - nexafit
-
 
   db:
     image: mysql:5.7
@@ -41,8 +39,6 @@ services:
       - ./my.cnf:/etc/mysql/conf.d/my.cnf
     ports:
       - "3305:3305"
-
-
 
 volumes:
   mysql_data:
