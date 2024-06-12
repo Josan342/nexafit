@@ -30,6 +30,9 @@ class Dieta(Base):
     proteinas_gramos = Column(DECIMAL(8,2), default=0)
     carbohidratos_gramos = Column(DECIMAL(8,2), default=0)
     grasas_gramos = Column(DECIMAL(8,2), default=0)
+    proteinas_totales = Column(DECIMAL(8,2), default=0)
+    carbohidratos_totales = Column(DECIMAL(8,2), default=0)
+    grasas_totales = Column(DECIMAL(8,2), default=0)
 
 
 

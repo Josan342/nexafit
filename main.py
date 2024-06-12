@@ -176,10 +176,13 @@ def get_dietas(db: Session = Depends(get_db), state = Depends(getUserID)):
             "nombre_dieta": dieta.nombre_dieta,
             "descripcion": dieta.descripcion,
             "calorias_objetivo": dieta.calorias_objetivo,
-            "calorias_totale": dieta.calorias_totales,
+            "calorias_totales": dieta.calorias_totales,
             "proteinas_gramos": dieta.proteinas_gramos,
             "carbohidratos_gramos": dieta.carbohidratos_gramos,
-            "grasas_gramos": dieta.grasas_gramos
+            "grasas_gramos": dieta.grasas_gramos,
+            "proteinas_totales": dieta.proteinas_totales,
+            "carbohidratos_totales": dieta.carbohidratos_totales,
+            "grasas_totales": dieta.grasas_totales
         }
         for dieta in dietas
     ]
@@ -236,9 +239,9 @@ def add_alimento_dieta(dieta_alimento: DietaAlimentoCreate, db: Session = Depend
     cantidad_factor = dieta_alimento.cantidad / 100
 
     db_dieta.calorias_totales += db_alimento.calorias * cantidad_factor
-    db_dieta.proteinas_gramos += db_alimento.proteinas * cantidad_factor
-    db_dieta.carbohidratos_gramos += db_alimento.carbohidratos * cantidad_factor
-    db_dieta.grasas_gramos += db_alimento.grasas * cantidad_factor
+    db_dieta.proteinas_totales += db_alimento.proteinas * cantidad_factor
+    db_dieta.carbohidratos_totales += db_alimento.carbohidratos * cantidad_factor
+    db_dieta.grasas_totales += db_alimento.grasas * cantidad_factor
 
     db.commit()
     db.refresh(db_dieta)
