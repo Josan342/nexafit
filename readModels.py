@@ -11,7 +11,7 @@ class AlimentoRead(BaseModel):
     grasas: Optional[float]
     
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 class AlimentoInfo(BaseModel):
     nombre: str
@@ -21,7 +21,7 @@ class AlimentoInfo(BaseModel):
     carbohidratos: Decimal
     grasas: Decimal
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 class EjercicioInfo(BaseModel):
@@ -59,7 +59,7 @@ class UsuarioRead(BaseModel):
     nick_name:str
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 class ProgresoRead(BaseModel):
     id_progreso: int

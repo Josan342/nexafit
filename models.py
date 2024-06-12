@@ -17,7 +17,7 @@ class Alimento(Base):
 class Categoria(Base):
     __tablename__ = 'categoria'
     id_categoria = Column(Integer, primary_key=True)
-    nombre_categoria = Column(Enum('peso libre','máquina','poleas','calistenia'), nullable=False)
+    nombre_categoria = Column(Enum('peso libre','mquina','poleas','calistenia'), nullable=False)
 
 class Dieta(Base):
     __tablename__ = 'dieta'
