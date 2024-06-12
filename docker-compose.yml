@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  nexafit:
+    image: nexafit
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    environment:
+      MYSQL_HOST: db
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MYSQL_DB: nf_test
+    depends_on:
+      - db
+    command: gunicorn -w 9 -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:80 --timeout 1200 
+
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./widget/dist:/usr/share/nginx/html
+      - ./nginx:/etc/nginx/conf.d
+    depends_on:
+      - nexafit
+
+
+  db:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: nf_test
+      MYSQL_USER: user
+      MYSQL_PASSWORD: user
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./db/data.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./my.cnf:/etc/mysql/conf.d/my.cnf
+    ports:
+      - "3305:3305"
+
+
+
+volumes:
+  mysql_data:
