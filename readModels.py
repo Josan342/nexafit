@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 class AlimentoRead(BaseModel):
+    id_alimento:int
     nombre: str
     calorias: Optional[int]
     proteinas: Optional[float]
