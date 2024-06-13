@@ -164,6 +164,38 @@ def get_rutinas(db: Session = Depends(get_db), state = Depends(getUserID)):
         for rutina in rutinas
     ]
 
+from datetime import datetime
+
+@app.get("/get-rutinas-dia")
+def get_rutinas_dia(db: Session = Depends(get_db), state = Depends(getUserID)):
+    dia_actual = datetime.now().strftime('%A').lower()
+    dias_semana_map = {
+        'monday': 'lunes',
+        'tuesday': 'martes',
+        'wednesday': 'mircoles',
+        'thursday': 'jueves',
+        'friday': 'viernes',
+        'saturday': 'sbado',
+        'sunday': 'domingo'
+    }
+    dia_actual_spanish = dias_semana_map[dia_actual]
+    
+    rutinas = db.query(Rutina).filter(Rutina.id_usuario == state.userID, Rutina.dias_semana == dia_actual_spanish).all()
+    if not rutinas:
+        raise HTTPException(status_code=404, detail="No se encontraron rutinas para este día")
+    
+    return [
+        {
+            "id_rutina": rutina.id_rutina,
+            "nombre_rutina": rutina.nombre_rutina,
+            "descripcion": rutina.descripcion,
+            "dias_semana": rutina.dias_semana,
+            "fecha_creacion": rutina.fecha_creacion
+        }
+        for rutina in rutinas
+    ]
+
+
 @app.get("/get-dietas")
 def get_dietas(db: Session = Depends(get_db), state = Depends(getUserID)):
     dietas = db.query(Dieta).filter(Dieta.id_usuario == state.userID).all()
