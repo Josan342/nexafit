@@ -365,6 +365,28 @@ def update_dieta(dieta_update: DietaUpdate, db: Session = Depends(get_db), state
 
     return {"message": "Dieta actualizada con éxito", "dieta": db_dieta}
 
+@app.delete("/delete-dieta")
+def delete_dieta(dieta_id_request: DietaIdRequest, db: Session = Depends(get_db), state = Depends(getUserID)):
+    id_dieta = dieta_id_request.id_dieta
+    
+    # Verificar si la dieta existe
+    db_dieta = db.query(Dieta).filter(Dieta.id_dieta == id_dieta).first()
+    if not db_dieta:
+        raise HTTPException(status_code=404, detail="Dieta no encontrada")
+    
+    # Verificar que la dieta pertenece al usuario que hace la solicitud
+    if db_dieta.id_usuario != state.userID:
+        raise HTTPException(status_code=403, detail="No tiene permiso para eliminar esta dieta")
+    
+    # Eliminar todas las relaciones en la tabla dieta_alimento
+    db.query(DietaAlimento).filter(DietaAlimento.id_dieta == id_dieta).delete()
+    
+    # Eliminar la dieta
+    db.delete(db_dieta)
+    db.commit()
+    
+    return {"message": "Dieta eliminada con éxito"}
+
 
 @app.post("/rutina/ejercicios")
 def get_rutina_ejercicios(rutina_id_request: RutinaIdRequest, db: Session = Depends(get_db)):
