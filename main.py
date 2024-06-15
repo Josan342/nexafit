@@ -251,6 +251,71 @@ def create_rutina(rutina: RutinaCreate, db: Session = Depends(get_db), state = D
     db.refresh(db_rutina)
     return db_rutina
 
+
+@app.post("/delete-alimento-dieta")
+def delete_alimento_dieta(dieta_alimento: DietaAlimentoCreate, db: Session = Depends(get_db)):
+    db_dieta = db.query(Dieta).filter(Dieta.id_dieta == dieta_alimento.id_dieta).first()
+    if not db_dieta:
+        raise HTTPException(status_code=404, detail="Dieta no encontrada")
+
+    db_alimento = db.query(DietaAlimento).filter(
+        DietaAlimento.id_dieta == dieta_alimento.id_dieta,
+        DietaAlimento.id_alimento == dieta_alimento.id_alimento
+    ).first()
+    if not db_alimento:
+        raise HTTPException(status_code=404, detail="Alimento no encontrado en la dieta")
+
+    cantidad_factor = db_alimento.cantidad / 100
+
+    db_dieta.calorias_totales -= db_alimento.alimento.calorias * cantidad_factor
+    db_dieta.proteinas_totales -= db_alimento.alimento.proteinas * cantidad_factor
+    db_dieta.carbohidratos_totales -= db_alimento.alimento.carbohidratos * cantidad_factor
+    db_dieta.grasas_totales -= db_alimento.alimento.grasas * cantidad_factor
+
+    db.delete(db_alimento)
+    db.commit()
+    db.refresh(db_dieta)
+
+    return {"message": "Alimento eliminado de la dieta y valores actualizados"}
+
+
+
+@app.post("/update-alimento-dieta")
+def update_alimento_dieta(dieta_alimento: DietaAlimentoCreate, db: Session = Depends(get_db)):
+    db_dieta = db.query(Dieta).filter(Dieta.id_dieta == dieta_alimento.id_dieta).first()
+    if not db_dieta:
+        raise HTTPException(status_code=404, detail="Dieta no encontrada")
+
+    db_alimento = db.query(DietaAlimento).filter(
+        DietaAlimento.id_dieta == dieta_alimento.id_dieta,
+        DietaAlimento.id_alimento == dieta_alimento.id_alimento
+    ).first()
+    if not db_alimento:
+        raise HTTPException(status_code=404, detail="Alimento no encontrado en la dieta")
+
+    # Revertir los valores antiguos
+    cantidad_factor_old = db_alimento.cantidad / 100
+    db_dieta.calorias_totales -= db_alimento.alimento.calorias * cantidad_factor_old
+    db_dieta.proteinas_totales -= db_alimento.alimento.proteinas * cantidad_factor_old
+    db_dieta.carbohidratos_totales -= db_alimento.alimento.carbohidratos * cantidad_factor_old
+    db_dieta.grasas_totales -= db_alimento.alimento.grasas * cantidad_factor_old
+
+    # Actualizar los valores
+    db_alimento.cantidad = dieta_alimento.cantidad
+
+    cantidad_factor_new = dieta_alimento.cantidad / 100
+    db_dieta.calorias_totales += db_alimento.alimento.calorias * cantidad_factor_new
+    db_dieta.proteinas_totales += db_alimento.alimento.proteinas * cantidad_factor_new
+    db_dieta.carbohidratos_totales += db_alimento.alimento.carbohidratos * cantidad_factor_new
+    db_dieta.grasas_totales += db_alimento.alimento.grasas * cantidad_factor_new
+
+    db.commit()
+    db.refresh(db_dieta)
+    db.refresh(db_alimento)
+
+    return {"message": "Alimento actualizado en la dieta y valores actualizados"}
+
+
 @app.post("/add-alimento-dieta")
 def add_alimento_dieta(dieta_alimento: DietaAlimentoCreate, db: Session = Depends(get_db)):
     db_dieta = db.query(Dieta).filter(Dieta.id_dieta == dieta_alimento.id_dieta).first()
