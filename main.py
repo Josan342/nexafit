@@ -16,6 +16,7 @@ from models import Alimento,Usuario
 import createModels
 import bcrypt
 import baseModels
+from updateModels import DietaUpdate
 
 app = FastAPI()
 origins = ["*"]
@@ -345,6 +346,24 @@ def get_dieta_alimentos(dieta_id_request: DietaIdRequest, db: Session = Depends(
 
     return alimentos_info
 
+
+@app.post("/update-dieta")
+def update_dieta(dieta_update: DietaUpdate, db: Session = Depends(get_db), state = Depends(getUserID)):
+    db_dieta = db.query(Dieta).filter(Dieta.id_dieta == dieta_update.id_dieta, Dieta.id_usuario == state.userID).first()
+    if not db_dieta:
+        raise HTTPException(status_code=404, detail="Dieta no encontrada")
+    
+    db_dieta.nombre_dieta = dieta_update.nombre_dieta
+    db_dieta.descripcion = dieta_update.descripcion
+    db_dieta.calorias_objetivo = dieta_update.calorias_objetivo
+    db_dieta.proteinas_gramos = dieta_update.proteinas_gramos
+    db_dieta.carbohidratos_gramos = dieta_update.carbohidratos_gramos
+    db_dieta.grasas_gramos = dieta_update.grasas_gramos
+
+    db.commit()
+    db.refresh(db_dieta)
+
+    return {"message": "Dieta actualizada con éxito", "dieta": db_dieta}
 
 
 @app.post("/rutina/ejercicios")
