@@ -15,6 +15,7 @@ class AlimentoRead(BaseModel):
         orm_mode = True
 
 class AlimentoInfo(BaseModel):
+    id_alimento:int
     nombre: str
     cantidad: Decimal
     calorias: Decimal
