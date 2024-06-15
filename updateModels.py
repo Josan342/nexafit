@@ -9,3 +9,11 @@ class DietaUpdate(BaseModel):
     proteinas_gramos: Optional[float] = 0
     carbohidratos_gramos: Optional[float] = 0
     grasas_gramos: Optional[float] = 0
+
+
+class RutinaEjercicioUpdate(BaseModel):
+    id_rutina: int
+    id_ejercicio: int
+    repeticiones: Optional[int]
+    series: Optional[int]
+    duracion_min: Optional[int]

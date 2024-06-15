@@ -5,7 +5,7 @@ from jose import JWTError,jwt
 from createModels import DietaAlimentoCreate, DietaCreate, DietaIdRequest, EjercicioIdRequest, ProgresoCreate, ProgresoEjercicioCreate, RutinaCreate, RutinaEjercicioCreate, RutinaIdRequest, UsuarioCreate
 import crud
 from database import get_db
-from deleteModels import DietaAlimentoDelete
+from deleteModels import DietaAlimentoDelete, RutinaEjercicioDelete
 from models import *
 from readModels import AlimentoInfo, AlimentoRead, EjercicioInfo, ProgresoEjercicioRead, ProgresoRead,UsuarioRead
 from schemas import *
@@ -17,7 +17,7 @@ from models import Alimento,Usuario
 import createModels
 import bcrypt
 import baseModels
-from updateModels import DietaUpdate
+from updateModels import DietaUpdate, RutinaEjercicioUpdate
 
 app = FastAPI()
 origins = ["*"]
@@ -251,6 +251,42 @@ def create_rutina(rutina: RutinaCreate, db: Session = Depends(get_db), state = D
     db.commit()
     db.refresh(db_rutina)
     return db_rutina
+
+
+@app.post("/update-ejercicio-rutina")
+def update_ejercicio_rutina(rutina_ejercicio: RutinaEjercicioUpdate, db: Session = Depends(get_db)):
+    db_rutina_ejercicio = db.query(RutinaEjercicio).filter(
+        RutinaEjercicio.id_rutina == rutina_ejercicio.id_rutina,
+        RutinaEjercicio.id_ejercicio == rutina_ejercicio.id_ejercicio
+    ).first()
+
+    if not db_rutina_ejercicio:
+        raise HTTPException(status_code=404, detail="Ejercicio en la rutina no encontrado")
+
+    if rutina_ejercicio.repeticiones is not None:
+        db_rutina_ejercicio.repeticiones = rutina_ejercicio.repeticiones
+    if rutina_ejercicio.series is not None:
+        db_rutina_ejercicio.series = rutina_ejercicio.series
+    if rutina_ejercicio.duracion_min is not None:
+        db_rutina_ejercicio.duracion_min = rutina_ejercicio.duracion_min
+
+    db.commit()
+    db.refresh(db_rutina_ejercicio)
+    return {"message": "Ejercicio actualizado en la rutina"}
+
+@app.post("/delete-ejercicio-rutina")
+def delete_ejercicio_rutina(rutina_ejercicio: RutinaEjercicioDelete, db: Session = Depends(get_db)):
+    db_rutina_ejercicio = db.query(RutinaEjercicio).filter(
+        RutinaEjercicio.id_rutina == rutina_ejercicio.id_rutina,
+        RutinaEjercicio.id_ejercicio == rutina_ejercicio.id_ejercicio
+    ).first()
+
+    if not db_rutina_ejercicio:
+        raise HTTPException(status_code=404, detail="Ejercicio en la rutina no encontrado")
+
+    db.delete(db_rutina_ejercicio)
+    db.commit()
+    return {"message": "Ejercicio eliminado de la rutina"}
 
 
 @app.post("/delete-alimento-dieta")
