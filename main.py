@@ -365,7 +365,7 @@ def update_dieta(dieta_update: DietaUpdate, db: Session = Depends(get_db), state
 
     return {"message": "Dieta actualizada con éxito", "dieta": db_dieta}
 
-@app.delete("/delete-dieta")
+@app.post("/delete-dieta")
 def delete_dieta(dieta_id_request: DietaIdRequest, db: Session = Depends(get_db), state = Depends(getUserID)):
     id_dieta = dieta_id_request.id_dieta
     
