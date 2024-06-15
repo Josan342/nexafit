@@ -5,6 +5,7 @@ from jose import JWTError,jwt
 from createModels import DietaAlimentoCreate, DietaCreate, DietaIdRequest, EjercicioIdRequest, ProgresoCreate, ProgresoEjercicioCreate, RutinaCreate, RutinaEjercicioCreate, RutinaIdRequest, UsuarioCreate
 import crud
 from database import get_db
+from deleteModels import DietaAlimentoDelete
 from models import *
 from readModels import AlimentoInfo, AlimentoRead, EjercicioInfo, ProgresoEjercicioRead, ProgresoRead,UsuarioRead
 from schemas import *
@@ -253,7 +254,7 @@ def create_rutina(rutina: RutinaCreate, db: Session = Depends(get_db), state = D
 
 
 @app.post("/delete-alimento-dieta")
-def delete_alimento_dieta(dieta_alimento: DietaAlimentoCreate, db: Session = Depends(get_db)):
+def delete_alimento_dieta(dieta_alimento: DietaAlimentoDelete, db: Session = Depends(get_db)):
     db_dieta = db.query(Dieta).filter(Dieta.id_dieta == dieta_alimento.id_dieta).first()
     if not db_dieta:
         raise HTTPException(status_code=404, detail="Dieta no encontrada")
@@ -410,6 +411,8 @@ def get_dieta_alimentos(dieta_id_request: DietaIdRequest, db: Session = Depends(
             )
         )
 
+    for alimento in alimentos_info:
+        print
     return alimentos_info
 
 
