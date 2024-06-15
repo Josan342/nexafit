@@ -42,7 +42,8 @@ class DietaAlimento(Base):
     id_alimento = Column(Integer, ForeignKey('alimento.id_alimento'), primary_key=True)
     cantidad = Column(DECIMAL(10,2))
     unidad_medida = Column(String(50))
-
+    
+    alimento = relationship("Alimento", backref="dietas")
 class Ejercicio(Base):
     __tablename__ = 'ejercicio'
     id_ejercicio = Column(Integer, primary_key=True)
