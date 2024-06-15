@@ -400,6 +400,7 @@ def get_dieta_alimentos(dieta_id_request: DietaIdRequest, db: Session = Depends(
         cantidad_factor = dieta_alimento.cantidad / 100
         alimentos_info.append(
             AlimentoInfo(
+                id_alimento=alimento.id_alimento,
                 nombre=alimento.nombre,
                 cantidad=dieta_alimento.cantidad,
                 calorias=alimento.calorias * cantidad_factor,
