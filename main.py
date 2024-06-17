@@ -87,40 +87,56 @@ def read_alimento(nombre_ejercicio: str, db: Session = Depends(get_db)):
 
 @app.post("/register", response_model=UsuarioRead)
 def crear_usuario(usuario: createModels.UsuarioCreate = Depends(hash_password), db: Session = Depends(get_db)):
+    try:
+        print("Inicio del registro de usuario")
+        db_user = crud.get_usuario_by_email(db, email=usuario.correo_electronico)
+        if db_user:
+            print("Correo electrónico ya está en uso")
+            raise HTTPException(status_code=400, detail="El correo ya está registrado")
 
-    db_user = crud.get_usuario_by_email(db, email=usuario.correo_electronico)
-    if db_user:
-        raise HTTPException(status_code=400, detail="El correo ya está registrado")
+        print("Creando usuario")
+        db_user = Usuario(
+            nombre=usuario.nombre,
+            correo_electronico=usuario.correo_electronico,
+            contrasena_hash=usuario.contrasena,
+            apellido1=usuario.apellido1,
+            apellido2=usuario.apellido2
+        )
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+        print("Usuario creado con éxito")
 
-    db_user = Usuario(
-        nombre=usuario.nombre,
-        correo_electronico=usuario.correo_electronico,
-        contrasena_hash=usuario.contrasena,
-        apellido1=usuario.apellido1,
-        apellido2=usuario.apellido2
-    )
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
+        print("Creando detalles del perfil")
+        detalle_perfil = DetallePerfil(
+            id_usuario=db_user.id_usuario,
+            nick_name=usuario.nick_name,
+        )
+        if usuario.descripcion:
+            detalle_perfil.descripcion = usuario.descripcion
+        if usuario.social_media:
+            detalle_perfil.social_media = usuario.social_media
 
-    detalle_perfil = DetallePerfil(
-        id_usuario=db_user.id_usuario,
-        nick_name=usuario.nick_name,
-    )
-    if usuario.descripcion:
-        detalle_perfil.descripcion=usuario.descripcion
-    if usuario.social_media:
-        detalle_perfil.social_media=usuario.social_media
+        db.add(detalle_perfil)
+        db.commit()
+        db.refresh(detalle_perfil)
+        print("Detalles del perfil creados con éxito")
 
-    db.add(detalle_perfil)
-    db.commit()
-    db.refresh(detalle_perfil)
-    usuario_read = UsuarioRead(
-        nombre=db_user.nombre,
-        correo_electronico=db_user.correo_electronico,
-        nick_name=detalle_perfil.nick_name
-    )
-    return usuario_read
+        usuario_read = UsuarioRead(
+            nombre=db_user.nombre,
+            correo_electronico=db_user.correo_electronico,
+            nick_name=detalle_perfil.nick_name
+        )
+        print("Registro de usuario completado con éxito")
+        return usuario_read
+
+    except HTTPException as http_exc:
+        print(f"HTTPException: {http_exc.detail}")
+        raise http_exc
+    except Exception as e:
+        print(f"Error inesperado: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error en el registro del usuario")
+
 
 @app.post("/login",response_model=baseModels.JWTBase)
 async def login_for_access_token(login:baseModels.Login, db: Session = Depends(get_db)):
