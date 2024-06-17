@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from fastapi import Depends, FastAPI, Request
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError,jwt
-from createModels import DietaAlimentoCreate, DietaCreate, DietaIdRequest, EjercicioIdRequest, ProgresoCreate, ProgresoEjercicioCreate, RutinaCreate, RutinaEjercicioCreate, RutinaIdRequest, UsuarioCreate
+from createModels import DietaAlimentoCreate, DietaCreate, DietaIdRequest, EjercicioIdRequest, ProgresoCreate, ProgresoEjercicioCreate, ProgresoIdRequest, RutinaCreate, RutinaEjercicioCreate, RutinaIdRequest, UsuarioCreate
 import crud
 from database import get_db
 from deleteModels import DietaAlimentoDelete, RutinaEjercicioDelete
