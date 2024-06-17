@@ -70,3 +70,6 @@ class RutinaIdRequest(BaseModel):
 
 class EjercicioIdRequest(BaseModel):
     id_ejercicio: int
+
+class ProgresoIdRequest(BaseModel):
+    id_progreso: int

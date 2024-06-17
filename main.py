@@ -509,6 +509,29 @@ def delete_dieta(dieta_id_request: DietaIdRequest, db: Session = Depends(get_db)
     return {"message": "Dieta eliminada con éxito"}
 
 
+@app.post("/delete-rutina")
+def delete_rutina(rutina_id_request: RutinaIdRequest, db: Session = Depends(get_db), state = Depends(getUserID)):
+    id_rutina = rutina_id_request.id_rutina
+    
+    # Verificar si la rutina existe
+    db_rutina = db.query(Rutina).filter(Rutina.id_rutina == id_rutina).first()
+    if not db_rutina:
+        raise HTTPException(status_code=404, detail="Rutina no encontrada")
+    
+    # Verificar que la rutina pertenece al usuario que hace la solicitud
+    if db_rutina.id_usuario != state.userID:
+        raise HTTPException(status_code=403, detail="No tiene permiso para eliminar esta rutina")
+    
+    # Eliminar todas las relaciones en la tabla rutina_ejercicio
+    db.query(RutinaEjercicio).filter(RutinaEjercicio.id_rutina == id_rutina).delete()
+    
+    # Eliminar la rutina
+    db.delete(db_rutina)
+    db.commit()
+    
+    return {"message": "Rutina eliminada con éxito"}
+
+
 @app.post("/rutina/ejercicios")
 def get_rutina_ejercicios(rutina_id_request: RutinaIdRequest, db: Session = Depends(get_db)):
     id_rutina = rutina_id_request.id_rutina
@@ -565,6 +588,25 @@ def create_progreso_ejercicio(progreso_ejercicio: ProgresoEjercicioCreate, db: S
     db.commit()
     db.refresh(nuevo_progreso_ejercicio)
     return nuevo_progreso_ejercicio
+
+@app.post("/delete-progreso")
+def delete_progreso(progreso_id_request: ProgresoIdRequest, db: Session = Depends(get_db), state = Depends(getUserID)):
+    id_progreso = progreso_id_request.id_progreso
+    
+    # Verificar si el progreso existe
+    db_progreso = db.query(Progreso).filter(Progreso.id_progreso == id_progreso).first()
+    if not db_progreso:
+        raise HTTPException(status_code=404, detail="Progreso no encontrado")
+    
+    # Verificar que el progreso pertenece al usuario que hace la solicitud
+    if db_progreso.id_usuario != state.userID:
+        raise HTTPException(status_code=403, detail="No tiene permiso para eliminar este progreso")
+    
+    # Eliminar el progreso
+    db.delete(db_progreso)
+    db.commit()
+    
+    return {"message": "Progreso eliminado con éxito"}
 
 @app.post("/progreso/ejercicio", response_model=List[ProgresoEjercicioRead])
 def get_progreso_ejercicio(ejercicio_id_request: EjercicioIdRequest, db: Session = Depends(get_db), state = Depends(getUserID)):
