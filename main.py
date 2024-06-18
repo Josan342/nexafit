@@ -124,7 +124,7 @@ def crear_usuario(usuario: createModels.UsuarioCreate = Depends(hash_password), 
         db_user = crud.get_usuario_by_email(db, email=usuario.correo_electronico)
         if db_user:
             print("Correo electrónico ya está en uso")
-            raise HTTPException(status_code=400, detail="El correo ya está registrado")
+            raise HTTPException(status_code=402, detail="El correo ya está registrado")
 
         print("Creando usuario")
         db_user = Usuario(
@@ -138,7 +138,10 @@ def crear_usuario(usuario: createModels.UsuarioCreate = Depends(hash_password), 
         db.commit()
         db.refresh(db_user)
         print("Usuario creado con éxito")
-
+        db_user_profile=crud.get_user_by_username(db,usuario.nick_name)
+        if db_user:
+            print("Correo electrónico ya está en uso")
+            raise HTTPException(status_code=403, detail="El nickname ya está registrado")
         print("Creando detalles del perfil")
         detalle_perfil = DetallePerfil(
             id_usuario=db_user.id_usuario,
