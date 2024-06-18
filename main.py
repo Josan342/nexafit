@@ -2,23 +2,22 @@ from datetime import datetime, timedelta
 import os
 from fastapi import Depends, FastAPI, Request
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError,jwt
+from jose import JWTError, jwt
 from createModels import DietaAlimentoCreate, DietaCreate, DietaIdRequest, EjercicioIdRequest, ProgresoCreate, ProgresoEjercicioCreate, ProgresoIdRequest, RutinaCreate, RutinaEjercicioCreate, RutinaIdRequest, UsuarioCreate
 import crud
 from database import get_db
 from deleteModels import DietaAlimentoDelete, ProgresoEjercicioDeleteRequest, RutinaEjercicioDelete
 from models import *
-from readModels import AlimentoInfo, AlimentoRead, EjercicioInfo, ProgresoEjercicioRead, ProgresoRead,UsuarioRead
+from readModels import AlimentoInfo, AlimentoRead, EjercicioInfo, ProgresoEjercicioRead, ProgresoRead, UsuarioRead
 from schemas import *
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from models import Alimento,Usuario
+from models import Alimento, Usuario
 import createModels
 import bcrypt
 import baseModels
 from updateModels import DietaUpdate, RutinaEjercicioUpdate
-from datetime import datetime
 
 app = FastAPI()
 origins = ["*"]
@@ -36,9 +35,9 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 300
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-def getUserID(request: Request, db:Session=Depends(get_db)):
+def getUserID(request: Request, db: Session = Depends(get_db)):
     if hasattr(request.state, 'user'):
-        user = crud.get_user_by_username(db,request.state.user)
+        user = crud.get_user_by_username(db, request.state.user)
         print("$$$$$$$$$$$$$$$$$$$$$$$$$$$")
         print(user.id_usuario)
         if user is None:
@@ -62,32 +61,64 @@ def create_access_token(data: dict):
     return encoded_jwt
 
 # Obtener todos los alimentos
-@app.get("/alimentos/")
-def get_alimentos( db: Session = Depends(get_db)):
+@app.get("/alimentos/", summary="Obtener todos los alimentos", description="Devuelve una lista de todos los alimentos disponibles en la base de datos.")
+def get_alimentos(db: Session = Depends(get_db)):
+    """
+    Obtener todos los alimentos.
+
+    - **db**: Sesión de la base de datos.
+    """
     alimentos = db.query(Alimento).all()
     return alimentos
 
-@app.get("/ejercicios/")
-def get_ejercicios( db: Session = Depends(get_db)):
+# Obtener todos los ejercicios
+@app.get("/ejercicios/", summary="Obtener todos los ejercicios", description="Devuelve una lista de todos los ejercicios disponibles en la base de datos.")
+def get_ejercicios(db: Session = Depends(get_db)):
+    """
+    Obtener todos los ejercicios.
+
+    - **db**: Sesión de la base de datos.
+    """
     ejercicios = db.query(Ejercicio).all()
     return ejercicios
 
-@app.get("/alimentos/{nombre_alimento}", response_model=AlimentoRead)
+# Obtener un alimento por nombre
+@app.get("/alimentos/{nombre_alimento}", response_model=AlimentoRead, summary="Obtener un alimento por nombre", description="Devuelve la información de un alimento específico.")
 def read_alimento(nombre_alimento: str, db: Session = Depends(get_db)):
+    """
+    Obtener un alimento por nombre.
+
+    - **nombre_alimento**: Nombre del alimento a buscar.
+    - **db**: Sesión de la base de datos.
+    """
     db_alimento = crud.get_alimento_by_nombre(db, nombre=nombre_alimento)
     if db_alimento is None:
         raise HTTPException(status_code=404, detail="Alimento no encontrado")
     return db_alimento
 
-@app.get("/ejercicios/{nombre_ejercicio}")
-def read_alimento(nombre_ejercicio: str, db: Session = Depends(get_db)):
-    db_alimento = crud.get_ejercicio_by_name(db, nombre=nombre_ejercicio)
-    if db_alimento is None:
-        raise HTTPException(status_code=404, detail="Ejercicio no encontrado")
-    return db_alimento
+# Obtener un ejercicio por nombre
+@app.get("/ejercicios/{nombre_ejercicio}", summary="Obtener un ejercicio por nombre", description="Devuelve la información de un ejercicio específico.")
+def read_ejercicio(nombre_ejercicio: str, db: Session = Depends(get_db)):
+    """
+    Obtener un ejercicio por nombre.
 
-@app.post("/register", response_model=UsuarioRead)
+    - **nombre_ejercicio**: Nombre del ejercicio a buscar.
+    - **db**: Sesión de la base de datos.
+    """
+    db_ejercicio = crud.get_ejercicio_by_name(db, nombre=nombre_ejercicio)
+    if db_ejercicio is None:
+        raise HTTPException(status_code=404, detail="Ejercicio no encontrado")
+    return db_ejercicio
+
+# Registrar un nuevo usuario
+@app.post("/register", response_model=UsuarioRead, summary="Registrar un nuevo usuario", description="Crea un nuevo usuario en la base de datos.")
 def crear_usuario(usuario: createModels.UsuarioCreate = Depends(hash_password), db: Session = Depends(get_db)):
+    """
+    Registrar un nuevo usuario.
+
+    - **usuario**: Datos del usuario a registrar.
+    - **db**: Sesión de la base de datos.
+    """
     try:
         print("Inicio del registro de usuario")
         db_user = crud.get_usuario_by_email(db, email=usuario.correo_electronico)
@@ -138,22 +169,33 @@ def crear_usuario(usuario: createModels.UsuarioCreate = Depends(hash_password), 
         print(f"Error inesperado: {str(e)}")
         raise HTTPException(status_code=500, detail="Error en el registro del usuario")
 
+# Iniciar sesión
+@app.post("/login", response_model=baseModels.JWTBase, summary="Iniciar sesión", description="Autentica un usuario y devuelve un token JWT.")
+async def login_for_access_token(login: baseModels.Login, db: Session = Depends(get_db)):
+    """
+    Iniciar sesión.
 
-@app.post("/login",response_model=baseModels.JWTBase)
-async def login_for_access_token(login:baseModels.Login, db: Session = Depends(get_db)):
-
-    if crud.verify_user(db,login):
+    - **login**: Credenciales de inicio de sesión del usuario.
+    - **db**: Sesión de la base de datos.
+    """
+    if crud.verify_user(db, login):
         print("entra")
         user_dict = {"username": login.username, "password": login.contrasena}
         access_token = create_access_token(data=user_dict)
-        return {"type_token": "Bearer","token":access_token}
+        return {"type_token": "Bearer", "token": access_token}
     else:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
-    
+
+# Middleware para verificar JWT
 @app.middleware("http")
 async def verify_jwt(request: Request, call_next):
+    """
+    Middleware para verificar el token JWT en cada solicitud.
 
-    bypass_routes = ["/docs", "/openapi.json", "/redoc","/login","/register","/"]
+    - **request**: Solicitud HTTP.
+    - **call_next**: Llamada al siguiente middleware o ruta.
+    """
+    bypass_routes = ["/docs", "/openapi.json", "/redoc", "/login", "/register", "/"]
 
     if request.url.path not in bypass_routes:
         token = request.headers.get("Authorization", "").split(" ")[-1]
@@ -162,28 +204,41 @@ async def verify_jwt(request: Request, call_next):
             request.state.user = payload.get("username")
         except JWTError:
             raise HTTPException(status_code=401, detail="Invalid token")
-    
+
     response = await call_next(request)
     return response
 
-@app.post("/verify-token")
+# Verificar token
+@app.post("/verify-token", summary="Verificar token", description="Verifica la validez de un token JWT.")
 async def verify_token(request: Request):
+    """
+    Verificar token.
+
+    - **request**: Solicitud HTTP.
+    """
     token = request.headers.get("Authorization", "").split(" ")[-1]
     if not token:
         raise HTTPException(status_code=400, detail="Token missing")
-    
+
     try:
         jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return {"estado": "OK"}
     except JWTError:
         raise HTTPException(status_code=400, detail="Invalid token")
 
-@app.get("/get-rutinas")
-def get_rutinas(db: Session = Depends(get_db), state = Depends(getUserID)):
+# Obtener rutinas del usuario
+@app.get("/get-rutinas", summary="Obtener rutinas del usuario", description="Devuelve todas las rutinas del usuario autenticado.")
+def get_rutinas(db: Session = Depends(get_db), state=Depends(getUserID)):
+    """
+    Obtener rutinas del usuario.
+
+    - **db**: Sesión de la base de datos.
+    - **state**: Estado de la solicitud que incluye el ID del usuario.
+    """
     rutinas = db.query(Rutina).filter(Rutina.id_usuario == state.userID).all()
     if not rutinas:
         raise HTTPException(status_code=404, detail="No se encontraron rutinas para este usuario")
-    
+
     return [
         {
             "id_rutina": rutina.id_rutina,
@@ -195,26 +250,31 @@ def get_rutinas(db: Session = Depends(get_db), state = Depends(getUserID)):
         for rutina in rutinas
     ]
 
+# Obtener rutinas del día
+@app.get("/get-rutinas-dia", summary="Obtener rutinas del día", description="Devuelve las rutinas del usuario autenticado para el día actual.")
+def get_rutinas_dia(db: Session = Depends(get_db), state=Depends(getUserID)):
+    """
+    Obtener rutinas del día.
 
-
-@app.get("/get-rutinas-dia")
-def get_rutinas_dia(db: Session = Depends(get_db), state = Depends(getUserID)):
+    - **db**: Sesión de la base de datos.
+    - **state**: Estado de la solicitud que incluye el ID del usuario.
+    """
     dia_actual = datetime.now().strftime('%A').lower()
     dias_semana_map = {
         'monday': 'lunes',
         'tuesday': 'martes',
-        'wednesday': 'mircoles',
+        'wednesday': 'miércoles',
         'thursday': 'jueves',
         'friday': 'viernes',
-        'saturday': 'sbado',
+        'saturday': 'sábado',
         'sunday': 'domingo'
     }
     dia_actual_spanish = dias_semana_map[dia_actual]
-    
+
     rutinas = db.query(Rutina).filter(Rutina.id_usuario == state.userID, Rutina.dias_semana == dia_actual_spanish).all()
     if not rutinas:
         raise HTTPException(status_code=404, detail="No se encontraron rutinas para este día")
-    
+
     return [
         {
             "id_rutina": rutina.id_rutina,
@@ -226,13 +286,19 @@ def get_rutinas_dia(db: Session = Depends(get_db), state = Depends(getUserID)):
         for rutina in rutinas
     ]
 
+# Obtener dietas del usuario
+@app.get("/get-dietas", summary="Obtener dietas del usuario", description="Devuelve todas las dietas del usuario autenticado.")
+def get_dietas(db: Session = Depends(get_db), state=Depends(getUserID)):
+    """
+    Obtener dietas del usuario.
 
-@app.get("/get-dietas")
-def get_dietas(db: Session = Depends(get_db), state = Depends(getUserID)):
+    - **db**: Sesión de la base de datos.
+    - **state**: Estado de la solicitud que incluye el ID del usuario.
+    """
     dietas = db.query(Dieta).filter(Dieta.id_usuario == state.userID).all()
     if not dietas:
         raise HTTPException(status_code=200, detail="No se encontraron dietas para este usuario")
-    
+
     return [
         {
             "id_dieta": dieta.id_dieta,
@@ -250,25 +316,41 @@ def get_dietas(db: Session = Depends(get_db), state = Depends(getUserID)):
         for dieta in dietas
     ]
 
-@app.post("/delete-progreso-ejercicio")
-def delete_progreso_ejercicio(progreso_ejercicio_request: ProgresoEjercicioDeleteRequest, db: Session = Depends(get_db), state = Depends(getUserID)):
+# Eliminar progreso de ejercicio
+@app.post("/delete-progreso-ejercicio", summary="Eliminar progreso de ejercicio", description="Elimina un progreso de ejercicio del usuario autenticado.")
+def delete_progreso_ejercicio(progreso_ejercicio_request: ProgresoEjercicioDeleteRequest, db: Session = Depends(get_db), state=Depends(getUserID)):
+    """
+    Eliminar progreso de ejercicio.
+
+    - **progreso_ejercicio_request**: Datos del progreso de ejercicio a eliminar.
+    - **db**: Sesión de la base de datos.
+    - **state**: Estado de la solicitud que incluye el ID del usuario.
+    """
     id_progreso_ejercicio = progreso_ejercicio_request.id_progreso_ejercicio
-    
+
     db_progreso_ejercicio = db.query(ProgresoEjercicio).filter(ProgresoEjercicio.id_progreso_ejercicio == id_progreso_ejercicio).first()
     if not db_progreso_ejercicio:
         raise HTTPException(status_code=404, detail="Progreso de ejercicio no encontrado")
-    
+
     if db_progreso_ejercicio.id_usuario != state.userID:
         raise HTTPException(status_code=403, detail="No tiene permiso para eliminar este progreso de ejercicio")
-    
+
     # Eliminar el progreso de ejercicio
     db.delete(db_progreso_ejercicio)
     db.commit()
-    
+
     return {"message": "Progreso de ejercicio eliminado con éxito"}
 
-@app.post("/create-dieta")
-def create_dieta(dieta: DietaCreate, db: Session = Depends(get_db), state = Depends(getUserID)):
+# Crear una nueva dieta
+@app.post("/create-dieta", summary="Crear una nueva dieta", description="Crea una nueva dieta para el usuario autenticado.")
+def create_dieta(dieta: DietaCreate, db: Session = Depends(get_db), state=Depends(getUserID)):
+    """
+    Crear una nueva dieta.
+
+    - **dieta**: Datos de la dieta a crear.
+    - **db**: Sesión de la base de datos.
+    - **state**: Estado de la solicitud que incluye el ID del usuario.
+    """
     db_dieta = Dieta(
         id_usuario=state.userID,
         nombre_dieta=dieta.nombre_dieta,
@@ -283,8 +365,16 @@ def create_dieta(dieta: DietaCreate, db: Session = Depends(get_db), state = Depe
     db.refresh(db_dieta)
     return db_dieta
 
-@app.post("/create-rutina")
-def create_rutina(rutina: RutinaCreate, db: Session = Depends(get_db), state = Depends(getUserID)):
+# Crear una nueva rutina
+@app.post("/create-rutina", summary="Crear una nueva rutina", description="Crea una nueva rutina para el usuario autenticado.")
+def create_rutina(rutina: RutinaCreate, db: Session = Depends(get_db), state=Depends(getUserID)):
+    """
+    Crear una nueva rutina.
+
+    - **rutina**: Datos de la rutina a crear.
+    - **db**: Sesión de la base de datos.
+    - **state**: Estado de la solicitud que incluye el ID del usuario.
+    """
     print(rutina.dias_semana.name)
     print(rutina.dias_semana.value)
     db_rutina = Rutina(
@@ -298,9 +388,15 @@ def create_rutina(rutina: RutinaCreate, db: Session = Depends(get_db), state = D
     db.refresh(db_rutina)
     return db_rutina
 
-
-@app.post("/update-ejercicio-rutina")
+# Actualizar un ejercicio en una rutina
+@app.post("/update-ejercicio-rutina", summary="Actualizar un ejercicio en una rutina", description="Actualiza los datos de un ejercicio en una rutina específica.")
 def update_ejercicio_rutina(rutina_ejercicio: RutinaEjercicioUpdate, db: Session = Depends(get_db)):
+    """
+    Actualizar un ejercicio en una rutina.
+
+    - **rutina_ejercicio**: Datos del ejercicio en la rutina a actualizar.
+    - **db**: Sesión de la base de datos.
+    """
     db_rutina_ejercicio = db.query(RutinaEjercicio).filter(
         RutinaEjercicio.id_rutina == rutina_ejercicio.id_rutina,
         RutinaEjercicio.id_ejercicio == rutina_ejercicio.id_ejercicio
@@ -320,8 +416,15 @@ def update_ejercicio_rutina(rutina_ejercicio: RutinaEjercicioUpdate, db: Session
     db.refresh(db_rutina_ejercicio)
     return {"message": "Ejercicio actualizado en la rutina"}
 
-@app.post("/delete-ejercicio-rutina")
+# Eliminar un ejercicio de una rutina
+@app.post("/delete-ejercicio-rutina", summary="Eliminar un ejercicio de una rutina", description="Elimina un ejercicio de una rutina específica.")
 def delete_ejercicio_rutina(rutina_ejercicio: RutinaEjercicioDelete, db: Session = Depends(get_db)):
+    """
+    Eliminar un ejercicio de una rutina.
+
+    - **rutina_ejercicio**: Datos del ejercicio en la rutina a eliminar.
+    - **db**: Sesión de la base de datos.
+    """
     db_rutina_ejercicio = db.query(RutinaEjercicio).filter(
         RutinaEjercicio.id_rutina == rutina_ejercicio.id_rutina,
         RutinaEjercicio.id_ejercicio == rutina_ejercicio.id_ejercicio
@@ -334,9 +437,15 @@ def delete_ejercicio_rutina(rutina_ejercicio: RutinaEjercicioDelete, db: Session
     db.commit()
     return {"message": "Ejercicio eliminado de la rutina"}
 
-
-@app.post("/delete-alimento-dieta")
+# Eliminar un alimento de una dieta
+@app.post("/delete-alimento-dieta", summary="Eliminar un alimento de una dieta", description="Elimina un alimento de una dieta específica.")
 def delete_alimento_dieta(dieta_alimento: DietaAlimentoDelete, db: Session = Depends(get_db)):
+    """
+    Eliminar un alimento de una dieta.
+
+    - **dieta_alimento**: Datos del alimento en la dieta a eliminar.
+    - **db**: Sesión de la base de datos.
+    """
     db_dieta = db.query(Dieta).filter(Dieta.id_dieta == dieta_alimento.id_dieta).first()
     if not db_dieta:
         raise HTTPException(status_code=404, detail="Dieta no encontrada")
@@ -361,10 +470,15 @@ def delete_alimento_dieta(dieta_alimento: DietaAlimentoDelete, db: Session = Dep
 
     return {"message": "Alimento eliminado de la dieta y valores actualizados"}
 
-
-
-@app.post("/update-alimento-dieta")
+# Actualizar un alimento en una dieta
+@app.post("/update-alimento-dieta", summary="Actualizar un alimento en una dieta", description="Actualiza los datos de un alimento en una dieta específica.")
 def update_alimento_dieta(dieta_alimento: DietaAlimentoCreate, db: Session = Depends(get_db)):
+    """
+    Actualizar un alimento en una dieta.
+
+    - **dieta_alimento**: Datos del alimento en la dieta a actualizar.
+    - **db**: Sesión de la base de datos.
+    """
     db_dieta = db.query(Dieta).filter(Dieta.id_dieta == dieta_alimento.id_dieta).first()
     if not db_dieta:
         raise HTTPException(status_code=404, detail="Dieta no encontrada")
@@ -396,9 +510,15 @@ def update_alimento_dieta(dieta_alimento: DietaAlimentoCreate, db: Session = Dep
 
     return {"message": "Alimento actualizado en la dieta y valores actualizados"}
 
-
-@app.post("/add-alimento-dieta")
+# Añadir un alimento a una dieta
+@app.post("/add-alimento-dieta", summary="Añadir un alimento a una dieta", description="Añade un alimento a una dieta específica.")
 def add_alimento_dieta(dieta_alimento: DietaAlimentoCreate, db: Session = Depends(get_db)):
+    """
+    Añadir un alimento a una dieta.
+
+    - **dieta_alimento**: Datos del alimento a añadir a la dieta.
+    - **db**: Sesión de la base de datos.
+    """
     db_dieta = db.query(Dieta).filter(Dieta.id_dieta == dieta_alimento.id_dieta).first()
     if not db_dieta:
         raise HTTPException(status_code=404, detail="Dieta no encontrada")
@@ -437,8 +557,15 @@ def add_alimento_dieta(dieta_alimento: DietaAlimentoCreate, db: Session = Depend
 
     return {"message": "Alimento añadido a la dieta y valores actualizados"}
 
-@app.post("/add-ejercicio-rutina")
+# Añadir un ejercicio a una rutina
+@app.post("/add-ejercicio-rutina", summary="Añadir un ejercicio a una rutina", description="Añade un ejercicio a una rutina específica.")
 def add_ejercicio_rutina(rutina_ejercicio: RutinaEjercicioCreate, db: Session = Depends(get_db)):
+    """
+    Añadir un ejercicio a una rutina.
+
+    - **rutina_ejercicio**: Datos del ejercicio a añadir a la rutina.
+    - **db**: Sesión de la base de datos.
+    """
     db_rutina = db.query(Rutina).filter(Rutina.id_rutina == rutina_ejercicio.id_rutina).first()
     if not db_rutina:
         raise HTTPException(status_code=404, detail="Rutina no encontrada")
@@ -459,10 +586,15 @@ def add_ejercicio_rutina(rutina_ejercicio: RutinaEjercicioCreate, db: Session = 
     db.refresh(nuevo_rutina_ejercicio)
     return nuevo_rutina_ejercicio
 
-
-
-@app.post("/dieta/alimentos")
+# Obtener alimentos de una dieta
+@app.post("/dieta/alimentos", summary="Obtener alimentos de una dieta", description="Devuelve una lista de alimentos en una dieta específica.")
 def get_dieta_alimentos(dieta_id_request: DietaIdRequest, db: Session = Depends(get_db)):
+    """
+    Obtener alimentos de una dieta.
+
+    - **dieta_id_request**: Datos de la dieta a buscar.
+    - **db**: Sesión de la base de datos.
+    """
     id_dieta = dieta_id_request.id_dieta
 
     db_dieta = db.query(Dieta).filter(Dieta.id_dieta == id_dieta).first()
@@ -495,13 +627,20 @@ def get_dieta_alimentos(dieta_id_request: DietaIdRequest, db: Session = Depends(
         print
     return alimentos_info
 
+# Actualizar una dieta
+@app.post("/update-dieta", summary="Actualizar una dieta", description="Actualiza los datos de una dieta específica.")
+def update_dieta(dieta_update: DietaUpdate, db: Session = Depends(get_db), state=Depends(getUserID)):
+    """
+    Actualizar una dieta.
 
-@app.post("/update-dieta")
-def update_dieta(dieta_update: DietaUpdate, db: Session = Depends(get_db), state = Depends(getUserID)):
+    - **dieta_update**: Datos de la dieta a actualizar.
+    - **db**: Sesión de la base de datos.
+    - **state**: Estado de la solicitud que incluye el ID del usuario.
+    """
     db_dieta = db.query(Dieta).filter(Dieta.id_dieta == dieta_update.id_dieta, Dieta.id_usuario == state.userID).first()
     if not db_dieta:
         raise HTTPException(status_code=404, detail="Dieta no encontrada")
-    
+
     db_dieta.nombre_dieta = dieta_update.nombre_dieta
     db_dieta.descripcion = dieta_update.descripcion
     db_dieta.calorias_objetivo = dieta_update.calorias_objetivo
@@ -514,54 +653,75 @@ def update_dieta(dieta_update: DietaUpdate, db: Session = Depends(get_db), state
 
     return {"message": "Dieta actualizada con éxito", "dieta": db_dieta}
 
-@app.post("/delete-dieta")
-def delete_dieta(dieta_id_request: DietaIdRequest, db: Session = Depends(get_db), state = Depends(getUserID)):
+# Eliminar una dieta
+@app.post("/delete-dieta", summary="Eliminar una dieta", description="Elimina una dieta específica del usuario autenticado.")
+def delete_dieta(dieta_id_request: DietaIdRequest, db: Session = Depends(get_db), state=Depends(getUserID)):
+    """
+    Eliminar una dieta.
+
+    - **dieta_id_request**: Datos de la dieta a eliminar.
+    - **db**: Sesión de la base de datos.
+    - **state**: Estado de la solicitud que incluye el ID del usuario.
+    """
     id_dieta = dieta_id_request.id_dieta
-    
+
     # Verificar si la dieta existe
     db_dieta = db.query(Dieta).filter(Dieta.id_dieta == id_dieta).first()
     if not db_dieta:
         raise HTTPException(status_code=404, detail="Dieta no encontrada")
-    
+
     # Verificar que la dieta pertenece al usuario que hace la solicitud
     if db_dieta.id_usuario != state.userID:
         raise HTTPException(status_code=403, detail="No tiene permiso para eliminar esta dieta")
-    
+
     # Eliminar todas las relaciones en la tabla dieta_alimento
     db.query(DietaAlimento).filter(DietaAlimento.id_dieta == id_dieta).delete()
-    
+
     # Eliminar la dieta
     db.delete(db_dieta)
     db.commit()
-    
+
     return {"message": "Dieta eliminada con éxito"}
 
+# Eliminar una rutina
+@app.post("/delete-rutina", summary="Eliminar una rutina", description="Elimina una rutina específica del usuario autenticado.")
+def delete_rutina(rutina_id_request: RutinaIdRequest, db: Session = Depends(get_db), state=Depends(getUserID)):
+    """
+    Eliminar una rutina.
 
-@app.post("/delete-rutina")
-def delete_rutina(rutina_id_request: RutinaIdRequest, db: Session = Depends(get_db), state = Depends(getUserID)):
+    - **rutina_id_request**: Datos de la rutina a eliminar.
+    - **db**: Sesión de la base de datos.
+    - **state**: Estado de la solicitud que incluye el ID del usuario.
+    """
     id_rutina = rutina_id_request.id_rutina
-    
+
     # Verificar si la rutina existe
     db_rutina = db.query(Rutina).filter(Rutina.id_rutina == id_rutina).first()
     if not db_rutina:
         raise HTTPException(status_code=404, detail="Rutina no encontrada")
-    
+
     # Verificar que la rutina pertenece al usuario que hace la solicitud
     if db_rutina.id_usuario != state.userID:
         raise HTTPException(status_code=403, detail="No tiene permiso para eliminar esta rutina")
-    
+
     # Eliminar todas las relaciones en la tabla rutina_ejercicio
     db.query(RutinaEjercicio).filter(RutinaEjercicio.id_rutina == id_rutina).delete()
-    
+
     # Eliminar la rutina
     db.delete(db_rutina)
     db.commit()
-    
+
     return {"message": "Rutina eliminada con éxito"}
 
-
-@app.post("/rutina/ejercicios")
+# Obtener ejercicios de una rutina
+@app.post("/rutina/ejercicios", summary="Obtener ejercicios de una rutina", description="Devuelve una lista de ejercicios en una rutina específica.")
 def get_rutina_ejercicios(rutina_id_request: RutinaIdRequest, db: Session = Depends(get_db)):
+    """
+    Obtener ejercicios de una rutina.
+
+    - **rutina_id_request**: Datos de la rutina a buscar.
+    - **db**: Sesión de la base de datos.
+    """
     id_rutina = rutina_id_request.id_rutina
     print(id_rutina)
 
@@ -593,9 +753,16 @@ def get_rutina_ejercicios(rutina_id_request: RutinaIdRequest, db: Session = Depe
 
     return ejercicios_info
 
-@app.post("/create-progreso-ejercicio")
-def create_progreso_ejercicio(progreso_ejercicio: ProgresoEjercicioCreate, db: Session = Depends(get_db),state = Depends(getUserID)):
+# Crear un nuevo progreso de ejercicio
+@app.post("/create-progreso-ejercicio", summary="Crear un nuevo progreso de ejercicio", description="Crea un nuevo progreso de ejercicio para el usuario autenticado.")
+def create_progreso_ejercicio(progreso_ejercicio: ProgresoEjercicioCreate, db: Session = Depends(get_db), state=Depends(getUserID)):
+    """
+    Crear un nuevo progreso de ejercicio.
 
+    - **progreso_ejercicio**: Datos del progreso de ejercicio a crear.
+    - **db**: Sesión de la base de datos.
+    - **state**: Estado de la solicitud que incluye el ID del usuario.
+    """
     db_usuario = db.query(Usuario).filter(Usuario.id_usuario == state.userID).first()
     if not db_usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
@@ -617,27 +784,43 @@ def create_progreso_ejercicio(progreso_ejercicio: ProgresoEjercicioCreate, db: S
     db.refresh(nuevo_progreso_ejercicio)
     return nuevo_progreso_ejercicio
 
-@app.post("/delete-progreso")
-def delete_progreso(progreso_id_request: ProgresoIdRequest, db: Session = Depends(get_db), state = Depends(getUserID)):
+# Eliminar un progreso
+@app.post("/delete-progreso", summary="Eliminar un progreso", description="Elimina un progreso específico del usuario autenticado.")
+def delete_progreso(progreso_id_request: ProgresoIdRequest, db: Session = Depends(get_db), state=Depends(getUserID)):
+    """
+    Eliminar un progreso.
+
+    - **progreso_id_request**: Datos del progreso a eliminar.
+    - **db**: Sesión de la base de datos.
+    - **state**: Estado de la solicitud que incluye el ID del usuario.
+    """
     id_progreso = progreso_id_request.id_progreso
-    
+
     # Verificar si el progreso existe
     db_progreso = db.query(Progreso).filter(Progreso.id_progreso == id_progreso).first()
     if not db_progreso:
         raise HTTPException(status_code=404, detail="Progreso no encontrado")
-    
+
     # Verificar que el progreso pertenece al usuario que hace la solicitud
     if db_progreso.id_usuario != state.userID:
         raise HTTPException(status_code=403, detail="No tiene permiso para eliminar este progreso")
-    
+
     # Eliminar el progreso
     db.delete(db_progreso)
     db.commit()
-    
+
     return {"message": "Progreso eliminado con éxito"}
 
-@app.post("/progreso/ejercicio", response_model=List[ProgresoEjercicioRead])
-def get_progreso_ejercicio(ejercicio_id_request: EjercicioIdRequest, db: Session = Depends(get_db), state = Depends(getUserID)):
+# Obtener progreso de ejercicio
+@app.post("/progreso/ejercicio", response_model=List[ProgresoEjercicioRead], summary="Obtener progreso de ejercicio", description="Devuelve el progreso de un ejercicio específico del usuario autenticado.")
+def get_progreso_ejercicio(ejercicio_id_request: EjercicioIdRequest, db: Session = Depends(get_db), state=Depends(getUserID)):
+    """
+    Obtener progreso de ejercicio.
+
+    - **ejercicio_id_request**: Datos del ejercicio a buscar.
+    - **db**: Sesión de la base de datos.
+    - **state**: Estado de la solicitud que incluye el ID del usuario.
+    """
     id_ejercicio = ejercicio_id_request.id_ejercicio
 
     # Verificar si el ejercicio existe
@@ -653,14 +836,28 @@ def get_progreso_ejercicio(ejercicio_id_request: EjercicioIdRequest, db: Session
 
     return progreso
 
+# Obtener todos los progresos
+@app.get("/progresos", response_model=List[ProgresoRead], summary="Obtener todos los progresos", description="Devuelve todos los progresos del usuario autenticado.")
+def get_progresos(db: Session = Depends(get_db), state=Depends(getUserID)):
+    """
+    Obtener todos los progresos.
 
-@app.get("/progresos", response_model=List[ProgresoRead])
-def get_progresos(db: Session = Depends(get_db),state = Depends(getUserID)):
+    - **db**: Sesión de la base de datos.
+    - **state**: Estado de la solicitud que incluye el ID del usuario.
+    """
     progresos = db.query(Progreso).filter(Progreso.id_usuario == state.userID).all()
     return progresos
 
-@app.post("/progresos", response_model=ProgresoRead)
-def create_progreso(progreso: ProgresoCreate, db: Session = Depends(get_db),state = Depends(getUserID)):
+# Crear un nuevo progreso
+@app.post("/progresos", response_model=ProgresoRead, summary="Crear un nuevo progreso", description="Crea un nuevo progreso para el usuario autenticado.")
+def create_progreso(progreso: ProgresoCreate, db: Session = Depends(get_db), state=Depends(getUserID)):
+    """
+    Crear un nuevo progreso.
+
+    - **progreso**: Datos del progreso a crear.
+    - **db**: Sesión de la base de datos.
+    - **state**: Estado de la solicitud que incluye el ID del usuario.
+    """
     db_progreso = Progreso(
         id_usuario=state.userID,
         fecha=progreso.fecha,
