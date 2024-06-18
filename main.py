@@ -218,7 +218,7 @@ def get_rutinas_dia(db: Session = Depends(get_db), state = Depends(getUserID)):
 def get_dietas(db: Session = Depends(get_db), state = Depends(getUserID)):
     dietas = db.query(Dieta).filter(Dieta.id_usuario == state.userID).all()
     if not dietas:
-        raise HTTPException(status_code=404, detail="No se encontraron dietas para este usuario")
+        raise HTTPException(status_code=200, detail="No se encontraron dietas para este usuario")
     
     return [
         {
