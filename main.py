@@ -5,7 +5,7 @@ from jose import JWTError,jwt
 from createModels import DietaAlimentoCreate, DietaCreate, DietaIdRequest, EjercicioIdRequest, ProgresoCreate, ProgresoEjercicioCreate, ProgresoIdRequest, RutinaCreate, RutinaEjercicioCreate, RutinaIdRequest, UsuarioCreate
 import crud
 from database import get_db
-from deleteModels import DietaAlimentoDelete, RutinaEjercicioDelete
+from deleteModels import DietaAlimentoDelete, ProgresoEjercicioDeleteRequest, RutinaEjercicioDelete
 from models import *
 from readModels import AlimentoInfo, AlimentoRead, EjercicioInfo, ProgresoEjercicioRead, ProgresoRead,UsuarioRead
 from schemas import *
@@ -236,6 +236,25 @@ def get_dietas(db: Session = Depends(get_db), state = Depends(getUserID)):
         }
         for dieta in dietas
     ]
+
+@app.post("/delete-progreso-ejercicio")
+def delete_progreso_ejercicio(progreso_ejercicio_request: ProgresoEjercicioDeleteRequest, db: Session = Depends(get_db), state = Depends(getUserID)):
+    id_progreso_ejercicio = progreso_ejercicio_request.id_progreso_ejercicio
+    
+    # Verificar si el progreso de ejercicio existe
+    db_progreso_ejercicio = db.query(ProgresoEjercicio).filter(ProgresoEjercicio.id_progreso_ejercicio == id_progreso_ejercicio).first()
+    if not db_progreso_ejercicio:
+        raise HTTPException(status_code=404, detail="Progreso de ejercicio no encontrado")
+    
+    # Verificar que el progreso de ejercicio pertenece al usuario que hace la solicitud
+    if db_progreso_ejercicio.id_usuario != state.userID:
+        raise HTTPException(status_code=403, detail="No tiene permiso para eliminar este progreso de ejercicio")
+    
+    # Eliminar el progreso de ejercicio
+    db.delete(db_progreso_ejercicio)
+    db.commit()
+    
+    return {"message": "Progreso de ejercicio eliminado con éxito"}
 
 @app.post("/create-dieta")
 def create_dieta(dieta: DietaCreate, db: Session = Depends(get_db), state = Depends(getUserID)):

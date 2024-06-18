@@ -9,3 +9,6 @@ class DietaAlimentoDelete(BaseModel):
 class RutinaEjercicioDelete(BaseModel):
     id_rutina: int
     id_ejercicio: int
+
+class ProgresoEjercicioDeleteRequest(BaseModel):
+    id_progreso_ejercicio: int
