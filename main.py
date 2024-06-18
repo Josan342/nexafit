@@ -165,6 +165,18 @@ async def verify_jwt(request: Request, call_next):
     response = await call_next(request)
     return response
 
+@app.post("/verify-token")
+async def verify_token(request: Request):
+    token = request.headers.get("Authorization", "").split(" ")[-1]
+    if not token:
+        raise HTTPException(status_code=400, detail="Token missing")
+    
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return {"estado": "OK"}
+    except JWTError:
+        raise HTTPException(status_code=400, detail="Invalid token")
+
 @app.get("/get-rutinas")
 def get_rutinas(db: Session = Depends(get_db), state = Depends(getUserID)):
     rutinas = db.query(Rutina).filter(Rutina.id_usuario == state.userID).all()
