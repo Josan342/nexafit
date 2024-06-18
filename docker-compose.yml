@@ -11,6 +11,8 @@ services:
       MYSQL_USER: root
       MYSQL_PASSWORD: root
       MYSQL_DB: nf_test
+      SECRET_KEY: posYoQueSeMiLoco
+      ALGORITHM: HS256
     depends_on:
       - db
     command: gunicorn -w 9 -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:80 --timeout 1200 

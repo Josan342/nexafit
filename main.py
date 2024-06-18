@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import os
 from fastapi import Depends, FastAPI, Request
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError,jwt
@@ -12,12 +13,12 @@ from schemas import *
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from database import SessionLocal, engine
 from models import Alimento,Usuario
 import createModels
 import bcrypt
 import baseModels
 from updateModels import DietaUpdate, RutinaEjercicioUpdate
+from datetime import datetime
 
 app = FastAPI()
 origins = ["*"]
@@ -29,8 +30,8 @@ app.add_middleware(
     allow_headers=["*"], 
 )
 
-SECRET_KEY = "posYoQueSeMiLoco"
-ALGORITHM = "HS256"
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = 300
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -172,7 +173,7 @@ async def verify_token(request: Request):
         raise HTTPException(status_code=400, detail="Token missing")
     
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return {"estado": "OK"}
     except JWTError:
         raise HTTPException(status_code=400, detail="Invalid token")
@@ -194,7 +195,7 @@ def get_rutinas(db: Session = Depends(get_db), state = Depends(getUserID)):
         for rutina in rutinas
     ]
 
-from datetime import datetime
+
 
 @app.get("/get-rutinas-dia")
 def get_rutinas_dia(db: Session = Depends(get_db), state = Depends(getUserID)):
@@ -253,12 +254,10 @@ def get_dietas(db: Session = Depends(get_db), state = Depends(getUserID)):
 def delete_progreso_ejercicio(progreso_ejercicio_request: ProgresoEjercicioDeleteRequest, db: Session = Depends(get_db), state = Depends(getUserID)):
     id_progreso_ejercicio = progreso_ejercicio_request.id_progreso_ejercicio
     
-    # Verificar si el progreso de ejercicio existe
     db_progreso_ejercicio = db.query(ProgresoEjercicio).filter(ProgresoEjercicio.id_progreso_ejercicio == id_progreso_ejercicio).first()
     if not db_progreso_ejercicio:
         raise HTTPException(status_code=404, detail="Progreso de ejercicio no encontrado")
     
-    # Verificar que el progreso de ejercicio pertenece al usuario que hace la solicitud
     if db_progreso_ejercicio.id_usuario != state.userID:
         raise HTTPException(status_code=403, detail="No tiene permiso para eliminar este progreso de ejercicio")
     
@@ -377,14 +376,12 @@ def update_alimento_dieta(dieta_alimento: DietaAlimentoCreate, db: Session = Dep
     if not db_alimento:
         raise HTTPException(status_code=404, detail="Alimento no encontrado en la dieta")
 
-    # Revertir los valores antiguos
     cantidad_factor_old = db_alimento.cantidad / 100
     db_dieta.calorias_totales -= db_alimento.alimento.calorias * cantidad_factor_old
     db_dieta.proteinas_totales -= db_alimento.alimento.proteinas * cantidad_factor_old
     db_dieta.carbohidratos_totales -= db_alimento.alimento.carbohidratos * cantidad_factor_old
     db_dieta.grasas_totales -= db_alimento.alimento.grasas * cantidad_factor_old
 
-    # Actualizar los valores
     db_alimento.cantidad = dieta_alimento.cantidad
 
     cantidad_factor_new = dieta_alimento.cantidad / 100
