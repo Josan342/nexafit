@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import NoResultFound
+from sqlalchemy.exc import NoResultFound,SQLAlchemyError
 from baseModels import Login
 from models import Alimento, DetallePerfil, Ejercicio,Usuario
 import bcrypt
@@ -34,4 +34,18 @@ def check_user_exists(db: Session, username: str) -> bool:
     except NoResultFound:
         return False
     except Exception as e:
+        return False
+    
+def delete_user_by_email(db: Session, email: str) -> bool:
+    try:
+        user = db.query(Usuario).filter(Usuario.correo_electronico == email).one()
+        db.delete(user)
+        db.commit()
+        return True
+    except NoResultFound:
+        print(f"Usuario con correo electrónico {email} no encontrado.")
+        return False
+    except SQLAlchemyError as e:
+        print(f"Error al eliminar el usuario: {e}")
+        db.rollback()
         return False
