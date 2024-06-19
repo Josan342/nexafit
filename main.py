@@ -137,6 +137,7 @@ def crear_usuario(usuario: createModels.UsuarioCreate = Depends(hash_password), 
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
+        db.flush()
 
         print("Usuario creado con éxito")
         print("Creando detalles del perfil")
