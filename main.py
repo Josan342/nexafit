@@ -243,7 +243,7 @@ def get_rutinas(db: Session = Depends(get_db), state=Depends(getUserID)):
     """
     rutinas = db.query(Rutina).filter(Rutina.id_usuario == state.userID).all()
     if not rutinas:
-        raise HTTPException(status_code=404, detail="No se encontraron rutinas para este usuario")
+        raise HTTPException(status_code=200, detail="No se encontraron rutinas para este usuario")
 
     return [
         {
@@ -269,10 +269,10 @@ def get_rutinas_dia(db: Session = Depends(get_db), state=Depends(getUserID)):
     dias_semana_map = {
         'monday': 'lunes',
         'tuesday': 'martes',
-        'wednesday': 'miércoles',
+        'wednesday': 'mircoles',
         'thursday': 'jueves',
         'friday': 'viernes',
-        'saturday': 'sábado',
+        'saturday': 'sbado',
         'sunday': 'domingo'
     }
     dia_actual_spanish = dias_semana_map[dia_actual]
@@ -461,7 +461,7 @@ def delete_alimento_dieta(dieta_alimento: DietaAlimentoDelete, db: Session = Dep
         DietaAlimento.id_alimento == dieta_alimento.id_alimento
     ).first()
     if not db_alimento:
-        raise HTTPException(status_code=404, detail="Alimento no encontrado en la dieta")
+        raise HTTPException(status_code=403, detail="Alimento no encontrado en la dieta")
 
     cantidad_factor = db_alimento.cantidad / 100
 
@@ -494,7 +494,7 @@ def update_alimento_dieta(dieta_alimento: DietaAlimentoCreate, db: Session = Dep
         DietaAlimento.id_alimento == dieta_alimento.id_alimento
     ).first()
     if not db_alimento:
-        raise HTTPException(status_code=404, detail="Alimento no encontrado en la dieta")
+        raise HTTPException(status_code=403, detail="Alimento no encontrado en la dieta")
 
     cantidad_factor_old = db_alimento.cantidad / 100
     db_dieta.calorias_totales -= db_alimento.alimento.calorias * cantidad_factor_old
@@ -531,7 +531,7 @@ def add_alimento_dieta(dieta_alimento: DietaAlimentoCreate, db: Session = Depend
 
     db_alimento = db.query(Alimento).filter(Alimento.id_alimento == dieta_alimento.id_alimento).first()
     if not db_alimento:
-        raise HTTPException(status_code=404, detail="Alimento no encontrado")
+        raise HTTPException(status_code=403, detail="Alimento no encontrado")
 
     # Verificar si el alimento ya está en la dieta
     existe_dieta_alimento = db.query(DietaAlimento).filter(
@@ -578,7 +578,7 @@ def add_ejercicio_rutina(rutina_ejercicio: RutinaEjercicioCreate, db: Session = 
 
     db_ejercicio = db.query(Ejercicio).filter(Ejercicio.id_ejercicio == rutina_ejercicio.id_ejercicio).first()
     if not db_ejercicio:
-        raise HTTPException(status_code=404, detail="Ejercicio no encontrado")
+        raise HTTPException(status_code=403, detail="Ejercicio no encontrado")
 
     nuevo_rutina_ejercicio = RutinaEjercicio(
         id_rutina=rutina_ejercicio.id_rutina,
@@ -775,7 +775,7 @@ def create_progreso_ejercicio(progreso_ejercicio: ProgresoEjercicioCreate, db: S
 
     db_ejercicio = db.query(Ejercicio).filter(Ejercicio.id_ejercicio == progreso_ejercicio.id_ejercicio).first()
     if not db_ejercicio:
-        raise HTTPException(status_code=404, detail="Ejercicio no encontrado")
+        raise HTTPException(status_code=403, detail="Ejercicio no encontrado")
 
     nuevo_progreso_ejercicio = ProgresoEjercicio(
         id_usuario=state.userID,
