@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import NoResultFound
 from baseModels import Login
 from models import Alimento, DetallePerfil, Ejercicio,Usuario
 import bcrypt
@@ -25,3 +26,12 @@ def verify_user(db: Session, login: Login):
 def get_user_by_username(db:Session,username:str):
     userProfile = db.query(DetallePerfil).filter(DetallePerfil.nick_name == username).first()
     return db.query(Usuario).filter(userProfile.id_usuario==Usuario.id_usuario).first()
+
+def check_user_exists(db: Session, username: str) -> bool:
+    try:
+        db.query(DetallePerfil).filter(DetallePerfil.nick_name == username).one()
+        return True
+    except NoResultFound:
+        return False
+    except Exception as e:
+        return False
